@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoScore — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     COLORS — change these 9 values to restyle the entire site.
+     ============================================================ */
+  :root{
+    --ink:#12302F;          /* main text color */
+    --surface:#FBF7F1;      /* page background */
+    --card:#FFFFFF;         /* card background */
+    --water:#2C6E71;        /* primary brand color */
+    --water-dark:#194B4D;   /* darker brand shade, used for emphasis blocks */
+    --sand:#E4D7C0;         /* light neutral, used in progress tracks */
+    --sand-line:#D9C7A8;    /* borders */
+    --coral:#D3673A;        /* accent, currently unused directly but available */
+    --coral-light:#F3E1D6;  /* accent background, used in the checkout comparison line */
+    --text-soft:#5B6B63;    /* secondary/muted text */
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--surface);font-family:'Inter',sans-serif;color:var(--ink);}
+  .wrap{max-width:900px;margin:0 auto;padding:48px 24px 80px;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:500;margin:0;}
+  header.hero{padding:8px 0 40px;border-bottom:1px solid var(--sand-line);margin-bottom:40px;}
+  .eyebrow{font-size:13px;color:var(--water);letter-spacing:.02em;margin-bottom:10px;}
+  header.hero h1{font-size:40px;line-height:1.15;max-width:560px;}
+  header.hero p{font-size:16px;color:var(--text-soft);max-width:560px;margin-top:14px;line-height:1.6;}
+
+  .toggle{display:flex;gap:8px;margin-bottom:32px;flex-wrap:wrap;}
+  .toggle button{font-family:'Inter',sans-serif;font-size:14px;font-weight:500;
+    padding:10px 18px;border-radius:999px;border:1px solid var(--sand-line);
+    background:var(--card);color:var(--text-soft);cursor:pointer;}
+  .toggle button.active{background:var(--water);border-color:var(--water);color:#fff;}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .phone{max-width:400px;margin:0 auto;background:var(--card);border-radius:24px;
+    border:1px solid var(--sand-line);padding:28px 24px;min-height:520px;
+    display:flex;flex-direction:column;}
+  .phone .label{font-size:12px;color:var(--text-soft);margin-bottom:4px;}
+  .phone h2{font-size:20px;margin-bottom:6px;}
+  .phone p.desc{font-size:14px;color:var(--text-soft);line-height:1.55;margin:0 0 20px;}
+
+  .optin-box{background:var(--surface);border:1px solid var(--sand-line);border-radius:14px;
+    padding:16px;font-size:13px;color:var(--text-soft);line-height:1.6;margin-bottom:20px;}
+  .switch-row{display:flex;align-items:center;justify-content:space-between;
+    background:var(--card);border:1px solid var(--sand-line);border-radius:12px;padding:14px 16px;margin-bottom:24px;}
+  .switch-row span{font-size:14px;font-weight:500;}
+  .switch{width:44px;height:26px;border-radius:999px;background:var(--sand-line);position:relative;cursor:pointer;transition:background .2s;}
+  .switch.on{background:var(--water);}
+  .switch .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;}
+  .switch.on .knob{left:21px;}
+
+  .gauge-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+  .gauge{background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--sand-line);}
+  .gauge .g-label{font-size:12px;color:var(--text-soft);margin-bottom:6px;}
+  .gauge .g-value{font-size:22px;font-weight:500;font-family:'Fraunces',serif;}
+  .gauge .g-sub{font-size:11px;color:var(--text-soft);margin-top:2px;}
+  .bar-track{height:6px;background:var(--sand);border-radius:999px;margin-top:10px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--water);border-radius:999px;transition:width .6s ease;}
+
+  .score-hero{text-align:center;padding:8px 0 20px;}
+  .score-num{font-family:'Fraunces',serif;font-size:56px;font-weight:500;color:var(--water-dark);}
+  .score-sub{font-size:13px;color:var(--text-soft);margin-top:4px;}
+  .compare-line{background:var(--coral-light);color:#7C3B1C;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.5;margin:16px 0;}
+  .points-row{display:flex;align-items:center;justify-content:space-between;
+    background:var(--water-dark);color:#fff;border-radius:12px;padding:14px 16px;margin-top:auto;}
+  .points-row .pts{font-family:'Fraunces',serif;font-size:20px;}
+  .points-row .pts-label{font-size:11px;opacity:.8;}
+
+  .btn-row{display:flex;gap:10px;margin-top:20px;}
+  button.nav{flex:1;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;
+    padding:12px;border-radius:10px;border:1px solid var(--sand-line);background:var(--card);
+    cursor:pointer;color:var(--ink);}
+  button.nav.primary{background:var(--water);border-color:var(--water);color:#fff;}
+  button.nav:disabled{opacity:.4;cursor:default;}
+
+  .steps-dots{display:flex;gap:6px;justify-content:center;margin-top:18px;}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--sand-line);}
+  .dot.active{background:var(--water);}
+
+  .hotel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
+  .metric-card{background:var(--card);border:1px solid var(--sand-line);border-radius:14px;padding:18px;}
+  .metric-card .m-label{font-size:12px;color:var(--text-soft);margin-bottom:8px;}
+  .metric-card .m-value{font-family:'Fraunces',serif;font-size:26px;}
+  .metric-card .m-delta{font-size:12px;color:var(--water);margin-top:4px;}
+  .chart-card{background:var(--card);border:1px solid var(--sand-line);border-radius:14px;padding:22px;}
+  .chart-card h3{font-size:15px;margin-bottom:18px;}
+  .chart-rows{display:flex;flex-direction:column;gap:12px;}
+  .chart-row{display:grid;grid-template-columns:120px 1fr 44px;align-items:center;gap:10px;font-size:13px;}
+  .chart-row .track{height:10px;background:var(--surface);border-radius:999px;overflow:hidden;border:1px solid var(--sand-line);}
+  .chart-row .fill{height:100%;background:var(--water);}
+  .chart-row .val{text-align:right;color:var(--text-soft);}
+
+  .wallet-card{background:var(--water-dark);color:#fff;border-radius:16px;padding:24px 28px;margin-bottom:28px;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+  .wallet-card .w-label{font-size:12px;opacity:.75;margin-bottom:6px;}
+  .wallet-card .w-value{font-family:'Fraunces',serif;font-size:38px;}
+  .wallet-card .w-note{font-size:12px;opacity:.8;max-width:260px;line-height:1.5;}
+  .rewards-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .reward-card{background:var(--card);border:1px solid var(--sand-line);border-radius:14px;padding:18px;display:flex;flex-direction:column;}
+  .reward-card .r-title{font-size:15px;font-weight:500;margin-bottom:4px;}
+  .reward-card .r-cost{font-size:12px;color:var(--text-soft);margin-bottom:14px;}
+  .reward-card button{margin-top:auto;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
+    padding:10px;border-radius:10px;border:1px solid var(--water);background:#fff;color:var(--water-dark);cursor:pointer;}
+  .reward-card button:disabled{opacity:.4;cursor:default;border-color:var(--sand-line);color:var(--text-soft);}
+  .reward-card.redeemed{border-color:var(--water);}
+  .reward-card .r-status{font-size:12px;color:var(--water);margin-top:8px;display:none;}
+  .reward-card.redeemed .r-status{display:block;}
+  .reward-card.redeemed button{display:none;}
+
+  .note{font-size:12px;color:var(--text-soft);margin-top:16px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow" id="txt-eyebrow"></div>
+    <h1 id="txt-title"></h1>
+    <p id="txt-subtitle"></p>
+  </header>
+
+  <div class="toggle">
+    <button id="tab-guest" class="active">Guest journey</button>
+    <button id="tab-rewards">Redeem points</button>
+    <button id="tab-hotel">Hotel dashboard</button>
+  </div>
+
+  <!-- GUEST VIEW -->
+  <div id="view-guest" class="view active">
+    <div class="phone">
+
+      <div class="step" data-step="0">
+        <div class="label">Check-in · room 214</div>
+        <h2>Turn on EcoScore</h2>
+        <p class="desc">Track your usage during this stay and earn EcoPoints redeemable across the hotel's entire network.</p>
+        <div class="optin-box">
+          What's tracked: water, air-conditioning and electricity, housekeeping frequency. This data is only used to calculate your score, compared against similar stays (same room type, same season). Nothing is shared beyond that calculation.
+        </div>
+        <div class="switch-row">
+          <span>Turn on tracking</span>
+          <div class="switch" id="optin-switch"><div class="knob"></div></div>
+        </div>
+      </div>
+
+      <div class="step" data-step="1" style="display:none;">
+        <div class="label">Day 2 of 3 · live</div>
+        <h2>Your stay so far</h2>
+        <p class="desc">Your usage updates through the stay, compared to the average for a room like yours.</p>
+        <div class="gauge-grid">
+          <div class="gauge">
+            <div class="g-label">Water</div>
+            <div class="g-value" id="water-val">—</div>
+            <div class="g-sub" id="water-sub">vs comparable average</div>
+            <div class="bar-track"><div class="bar-fill" id="water-bar" style="width:0%"></div></div>
+          </div>
+          <div class="gauge">
+            <div class="g-label">Electricity / AC</div>
+            <div class="g-value" id="power-val">—</div>
+            <div class="g-sub" id="power-sub">vs comparable average</div>
+            <div class="bar-track"><div class="bar-fill" id="power-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="optin-box">Housekeeping requested once over the first 2 days, versus 2 on average for this room type.</div>
+      </div>
+
+      <div class="step" data-step="2" style="display:none;">
+        <div class="label">Checkout · room 214</div>
+        <div class="score-hero">
+          <div class="score-num" id="final-score">—</div>
+          <div class="score-sub">EcoScore out of 100</div>
+        </div>
+        <div class="compare-line" id="compare-text">calculating…</div>
+        <div class="points-row">
+          <div>
+            <div class="pts" id="points-earned">+0</div>
+            <div class="pts-label">EcoPoints earned</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="pts" id="points-balance">0</div>
+            <div class="pts-label">network balance</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="steps-dots">
+        <div class="dot active" data-dot="0"></div>
+        <div class="dot" data-dot="1"></div>
+        <div class="dot" data-dot="2"></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="nav" id="btn-back" disabled>Back</button>
+        <button class="nav primary" id="btn-next">Continue</button>
+      </div>
+    </div>
+    <p class="note">This journey follows the five steps described in the proposal: opt-in, data integration, personalized scoring, real-time and checkout feedback, then cross-property rewards.</p>
+  </div>
+
+  <!-- REWARDS VIEW -->
+  <div id="view-rewards" class="view">
+    <div class="wallet-card">
+      <div>
+        <div class="w-label">Your EcoPoints balance</div>
+        <div class="w-value" id="wallet-balance">0</div>
+      </div>
+      <div class="w-note">Valid at any property in the network, not only the one where they were earned.</div>
+    </div>
+    <div class="rewards-grid" id="rewards-grid"></div>
+    <p class="note">This is the cross-property redemption described in the proposal: points earned at one hotel become a discount at another, which is the core value driver that only compounds at network scale.</p>
+  </div>
+
+  <!-- HOTEL VIEW -->
+  <div id="view-hotel" class="view">
+    <div class="hotel-grid" id="hotel-metrics"></div>
+    <div class="chart-card">
+      <h3>Average EcoScore by room type</h3>
+      <div class="chart-rows" id="hotel-chart"></div>
+    </div>
+    <p class="note">Aggregated, anonymized view as described in the proposal: no individual guest data is visible to the hotel, only trends by room type and season.</p>
+  </div>
+
+</div>
+
+<script>
+  /* ================================================================
+     CONFIG — everything you're likely to want to tweak lives here.
+     Change values below, save, refresh the page. Nothing else in
+     this file needs to be touched for these kinds of edits.
+     ================================================================ */
+  const CONFIG = {
+
+    // Header text
+    hero: {
+      eyebrow: "EcoScore · demo prototype",
+      title: "Turning a sustainable stay into a loyalty advantage",
+      subtitle: "This prototype simulates the guest journey, the hotel-side dashboard, and the rewards wallet to illustrate how the platform described in the proposal works. All data shown is randomly generated, not connected to real sensors."
+    },
+
+    // Simulated usage benchmarks for the "live dashboard" step.
+    // waterUsed/powerUsed are randomized within the min/max range each time.
+    usage: {
+      waterMin: 90, waterMax: 110, waterAvg: 118,     // liters/day
+      powerMin: 7,  powerMax: 10,  powerAvg: 9.5,     // kWh/day
+    },
+
+    // How many EcoPoints a guest earns per checkout, as a share of their EcoScore.
+    // e.g. 0.3 means a score of 80 earns 24 points.
+    pointsPerScorePoint: 0.3,
+
+    // Starting wallet balance shown before any checkout is simulated.
+    startingBalance: 240,
+
+    // Reward tiers shown in the "Redeem points" tab.
+    rewardTiers: [
+      { title: "5% off your next stay",  cost: 150 },
+      { title: "10% off your next stay", cost: 300 },
+      { title: "15% off your next stay", cost: 500 },
+      { title: "Free breakfast upgrade", cost: 200 },
+    ],
+
+    // Metric cards shown at the top of the "Hotel dashboard" tab.
+    hotelMetrics: [
+      { label: "Average EcoScore this month", value: "76",  delta: "+4 vs last month" },
+      { label: "Opt-in rate",                 value: "62%", delta: "of stays tracked" },
+      { label: "Estimated water savings",     value: "11%", delta: "vs untracked stays" },
+    ],
+
+    // Room types and their average EcoScore, shown as bars in the hotel chart.
+    roomTypes: [
+      { label: "Standard room",  score: 71 },
+      { label: "Superior room",  score: 78 },
+      { label: "Suite",          score: 65 },
+      { label: "Family room",    score: 82 },
+    ],
+  };
+  /* ================================================================
+     END CONFIG — code below reads the values above, no need to edit.
+     ================================================================ */
+
+  // ---- render header text from config ----
+  document.getElementById('txt-eyebrow').textContent = CONFIG.hero.eyebrow;
+  document.getElementById('txt-title').textContent = CONFIG.hero.title;
+  document.getElementById('txt-subtitle').textContent = CONFIG.hero.subtitle;
+
+  // ---- tab switching ----
+  const tabs = {guest:'tab-guest', rewards:'tab-rewards', hotel:'tab-hotel'};
+  const views = {guest:'view-guest', rewards:'view-rewards', hotel:'view-hotel'};
+  function showTab(name){
+    Object.keys(tabs).forEach(k=>{
+      document.getElementById(tabs[k]).classList.toggle('active', k===name);
+      document.getElementById(views[k]).classList.toggle('active', k===name);
+    });
+    if(name==='rewards') syncWallet();
+  }
+  document.getElementById('tab-guest').onclick = () => showTab('guest');
+  document.getElementById('tab-rewards').onclick = () => showTab('rewards');
+  document.getElementById('tab-hotel').onclick = () => showTab('hotel');
+
+  // ---- guest journey state ----
+  let step = 0;
+  let walletTotal = CONFIG.startingBalance;
+  const steps = document.querySelectorAll('.step');
+  const dots = document.querySelectorAll('.dot');
+  const btnNext = document.getElementById('btn-next');
+  const btnBack = document.getElementById('btn-back');
+  const optinSwitch = document.getElementById('optin-switch');
+  let optedIn = false;
+
+  optinSwitch.onclick = () => { optedIn = !optedIn; optinSwitch.classList.toggle('on', optedIn); };
+
+  function renderStep(){
+    steps.forEach(s => s.style.display = (Number(s.dataset.step) === step) ? 'block' : 'none');
+    dots.forEach(d => d.classList.toggle('active', Number(d.dataset.dot) === step));
+    btnBack.disabled = step === 0;
+    btnNext.textContent = step === 2 ? 'Start over' : 'Continue';
+    if(step === 1) runLiveDashboard();
+    if(step === 2) runCheckout();
+  }
+
+  btnNext.onclick = () => {
+    if(step === 2){ step = 0; optedIn = false; optinSwitch.classList.remove('on'); renderStep(); return; }
+    if(step === 0 && !optedIn){ optinSwitch.style.outline = '2px solid #D3673A'; setTimeout(()=>optinSwitch.style.outline='',900); return; }
+    step++;
+    renderStep();
+  };
+  btnBack.onclick = () => { if(step>0){ step--; renderStep(); } };
+
+  let simData = null;
+  function runLiveDashboard(){
+    const u = CONFIG.usage;
+    const waterUsed = Math.round(u.waterMin + Math.random()*(u.waterMax-u.waterMin));
+    const powerUsed = Math.round(u.powerMin + Math.random()*(u.powerMax-u.powerMin));
+    simData = {waterUsed, waterAvg: u.waterAvg, powerUsed, powerAvg: u.powerAvg};
+
+    animateValue('water-val', 0, waterUsed, v => v + ' L/day');
+    document.getElementById('water-sub').textContent = Math.round((1-waterUsed/u.waterAvg)*100) + '% below average';
+    document.getElementById('water-bar').style.width = Math.min(100, (waterUsed/u.waterAvg)*100) + '%';
+
+    animateValue('power-val', 0, powerUsed, v => v + ' kWh/day');
+    document.getElementById('power-sub').textContent = Math.round((1-powerUsed/u.powerAvg)*100) + '% below average';
+    document.getElementById('power-bar').style.width = Math.min(100, (powerUsed/u.powerAvg)*100) + '%';
+  }
+
+  function animateValue(id, from, to, fmt){
+    const el = document.getElementById(id);
+    const dur = 600, start = performance.now();
+    function tick(now){
+      const p = Math.min(1, (now-start)/dur);
+      const v = Math.round(from + (to-from)*p);
+      el.textContent = fmt(v);
+      if(p<1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function runCheckout(){
+    const d = simData || {waterUsed:100, waterAvg:CONFIG.usage.waterAvg, powerUsed:8, powerAvg:CONFIG.usage.powerAvg};
+    const waterScore = Math.min(100, Math.round((1 - d.waterUsed/d.waterAvg + 0.5) * 60));
+    const powerScore = Math.min(100, Math.round((1 - d.powerUsed/d.powerAvg + 0.5) * 60));
+    const finalScore = Math.max(1, Math.min(100, Math.round((waterScore+powerScore)/2)));
+    const points = Math.round(finalScore * CONFIG.pointsPerScorePoint);
+    const saved = Math.round((1 - d.waterUsed/d.waterAvg)*100);
+
+    animateValue('final-score', 0, finalScore, v => String(v));
+    document.getElementById('compare-text').textContent =
+      `${saved}% less than the average for comparable stays in this room type. Score in the top third this month.`;
+    document.getElementById('points-earned').textContent = '+' + points;
+    walletTotal += points;
+    animateValue('points-balance', 0, walletTotal, v => String(v));
+  }
+
+  // ---- rewards view, built from CONFIG.rewardTiers ----
+  const rewardsGrid = document.getElementById('rewards-grid');
+  CONFIG.rewardTiers.forEach((r, i) => {
+    const card = document.createElement('div');
+    card.className = 'reward-card';
+    card.innerHTML = `
+      <div class="r-title">${r.title}</div>
+      <div class="r-cost">${r.cost} EcoPoints</div>
+      <button data-cost="${r.cost}">Redeem</button>
+      <div class="r-status">Applied to your next booking.</div>
+    `;
+    rewardsGrid.appendChild(card);
+  });
+
+  rewardsGrid.addEventListener('click', (e) => {
+    if(e.target.tagName !== 'BUTTON') return;
+    const cost = Number(e.target.dataset.cost);
+    const card = e.target.closest('.reward-card');
+    if(walletTotal < cost){
+      e.target.textContent = 'Not enough points';
+      setTimeout(()=>{ e.target.textContent = 'Redeem'; }, 1200);
+      return;
+    }
+    walletTotal -= cost;
+    card.classList.add('redeemed');
+    syncWallet();
+  });
+
+  function syncWallet(){
+    document.getElementById('wallet-balance').textContent = walletTotal;
+    document.querySelectorAll('.reward-card:not(.redeemed) button').forEach(btn=>{
+      btn.disabled = walletTotal < Number(btn.dataset.cost);
+    });
+  }
+
+  // ---- hotel view, built from CONFIG.hotelMetrics and CONFIG.roomTypes ----
+  const hotelMetricsWrap = document.getElementById('hotel-metrics');
+  CONFIG.hotelMetrics.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'metric-card';
+    card.innerHTML = `<div class="m-label">${m.label}</div><div class="m-value">${m.value}</div><div class="m-delta">${m.delta}</div>`;
+    hotelMetricsWrap.appendChild(card);
+  });
+
+  const chartWrap = document.getElementById('hotel-chart');
+  CONFIG.roomTypes.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'chart-row';
+    row.innerHTML = `<div>${r.label}</div><div class="track"><div class="fill" style="width:${r.score}%"></div></div><div class="val">${r.score}</div>`;
+    chartWrap.appendChild(row);
+  });
+
+  renderStep();
+  syncWallet();
+</script>
+</body>
+</html>
